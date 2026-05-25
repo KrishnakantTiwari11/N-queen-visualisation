@@ -1,73 +1,113 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Board from "./Board";
+
+type BoardType = number[][];
+type MoveType = [number, number, number];
+
 const NQueen = () => {
-  const [board, setBoard] = useState(
+  const [board, setBoard] = useState<BoardType>(
     Array.from({ length: 8 }, () => Array(8).fill(0)),
   );
+
   const navigate = useNavigate();
+
   const [gameStatus, setGameStatus] = useState<boolean>(false);
-  const undoStack = useRef<number[][]>([]);
-  const redoStack = useRef<number[][]>([]);
-  const solutions = useRef<number[][][]>([]);
+
+  const undoStack = useRef<MoveType[]>([]);
+  const redoStack = useRef<MoveType[]>([]);
+  const solutions = useRef<BoardType[]>([]);
+
   const rowFill = useRef<number[]>(Array.from({ length: 8 }, () => 0));
+
   const colFill = useRef<number[]>(Array.from({ length: 8 }, () => 0));
+
   const leftDiagFill = useRef<number[]>(Array.from({ length: 16 }, () => 0));
+
   const rightDiagFill = useRef<number[]>(Array.from({ length: 16 }, () => 0));
 
   const queenCount = useRef<number>(0);
 
   const handleUndo = () => {
     if (undoStack.current.length === 0) return;
+
     const currMove = undoStack.current.pop();
 
-    const row = currMove?.[0];
-    const col = currMove?.[1];
-    const val = currMove?.[2] === 0 ? 1 : 0;
+    if (!currMove) return;
+
+    const [row, col, previousVal] = currMove;
+
+    const val = previousVal === 0 ? 1 : 0;
+
     val === 0 ? queenCount.current-- : queenCount.current++;
 
     setBoard((prev) => {
-      const tempBoard = prev.map((row) => [...row]);
+      const tempBoard = prev.map((r) => [...r]);
+
       tempBoard[row][col] = val;
+
       return tempBoard;
     });
 
     redoStack.current.push([row, col, val]);
   };
+
   const handleRedo = () => {
     if (redoStack.current.length === 0) return;
+
     const currMove = redoStack.current.pop();
-    const row = currMove?.[0];
-    const col = currMove?.[1];
-    const val = currMove?.[2] === 0 ? 1 : 0;
+
+    if (!currMove) return;
+
+    const [row, col, previousVal] = currMove;
+
+    const val = previousVal === 0 ? 1 : 0;
+
     val === 1 ? queenCount.current++ : queenCount.current--;
 
     setBoard((prev) => {
-      const tempBoard = prev.map((row) => [...row]);
+      const tempBoard = prev.map((r) => [...r]);
+
       tempBoard[row][col] = val;
+
       return tempBoard;
     });
+
     undoStack.current.push([row, col, val]);
   };
 
-  const checkWin = (board) => {
+  const checkWin = (): boolean => {
     if (queenCount.current !== 8) return false;
+
     for (let i = 0; i < 8; i++) {
-      if (rowFill.current[i] == 2 || colFill.current[i] == 2) return false;
-    }
-    for (let i = 0; i < 16; i++) {
-      if (leftDiagFill.current[i] == 2 || rightDiagFill.current[i] == 2)
+      if (rowFill.current[i] === 2 || colFill.current[i] === 2) {
         return false;
+      }
     }
+
+    for (let i = 0; i < 16; i++) {
+      if (leftDiagFill.current[i] === 2 || rightDiagFill.current[i] === 2) {
+        return false;
+      }
+    }
+
     return true;
   };
-  const solve = (res, n, genBoard, col) => {
+
+  const solve = (
+    res: BoardType[],
+    n: number,
+    genBoard: BoardType,
+    col: number,
+  ): void => {
     if (col === n) {
-      console.count();
       const solvedBoard = genBoard.map((row) => [...row]);
+
       res.push(solvedBoard);
+
       return;
     }
+
     for (let i = 0; i < 8; i++) {
       if (
         genBoard[i][col] === 0 &&
@@ -76,11 +116,15 @@ const NQueen = () => {
         rightDiagFill.current[7 + (col - i)] === 0
       ) {
         genBoard[i][col] = 1;
+
         rowFill.current[i] = 1;
         leftDiagFill.current[i + col] = 1;
         rightDiagFill.current[7 + (col - i)] = 1;
+
         solve(res, n, genBoard, col + 1);
+
         genBoard[i][col] = 0;
+
         rowFill.current[i] = 0;
         leftDiagFill.current[i + col] = 0;
         rightDiagFill.current[7 + (col - i)] = 0;
@@ -88,31 +132,44 @@ const NQueen = () => {
     }
   };
 
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const sleep = (ms: number): Promise<void> =>
+    new Promise((resolve) => setTimeout(resolve, ms));
 
   const handleGenerate = async () => {
-    let allPossibleSolutions: number[][][] = [];
+    let allPossibleSolutions: BoardType[] = [];
 
-    if (solutions?.current?.length >= 1) {
+    if (solutions.current.length >= 1) {
       allPossibleSolutions = solutions.current;
     } else {
       handleReset();
-      const tempBoard = Array.from({ length: 8 }, () => Array(8).fill(0));
+
+      const tempBoard: BoardType = Array.from({ length: 8 }, () =>
+        Array(8).fill(0),
+      );
+
       solve(allPossibleSolutions, 8, tempBoard, 0);
+
       solutions.current = allPossibleSolutions;
     }
+
     queenCount.current = 8;
-    const solution = allPossibleSolutions?.[solutions.current?.length - 1];
+
+    const solution = allPossibleSolutions[solutions.current.length - 1];
+
+    if (!solution) return;
+
     solutions.current.pop();
 
-    const animatedBoard = Array.from({ length: 8 }, () => Array(8).fill(0));
+    const animatedBoard: BoardType = Array.from({ length: 8 }, () =>
+      Array(8).fill(0),
+    );
 
     for (let row = 0; row < 8; row++) {
       for (let col = 0; col < 8; col++) {
         if (solution[row][col]) {
           animatedBoard[row][col] = 1;
 
-          document.startViewTransition(() => {
+          document.startViewTransition?.(() => {
             setBoard(animatedBoard.map((r) => [...r]));
           });
 
@@ -121,51 +178,64 @@ const NQueen = () => {
       }
     }
   };
+
   const isSolutionGenerated = solutions.current.length >= 1;
+
   const handleReset = () => {
-    const tempBoard = Array.from({ length: 8 }, () => Array(8).fill(0));
+    const tempBoard: BoardType = Array.from({ length: 8 }, () =>
+      Array(8).fill(0),
+    );
+
     queenCount.current = 0;
+
     rowFill.current = Array.from({ length: 8 }, () => 0);
+
     colFill.current = Array.from({ length: 8 }, () => 0);
+
     leftDiagFill.current = Array.from({ length: 16 }, () => 0);
+
     rightDiagFill.current = Array.from({ length: 16 }, () => 0);
+
     undoStack.current = [];
     redoStack.current = [];
     solutions.current = [];
-    setBoard(tempBoard);
-    console.log("temp board :", tempBoard);
 
-    console.log("being resetted");
+    setBoard(tempBoard);
+
+    setGameStatus(false);
   };
+
   const handleClick = (row: number, col: number) => {
     if (queenCount.current === 8) {
       return;
     }
-    const move = [row, col, 1];
+
+    const move: MoveType = [row, col, 1];
+
     undoStack.current.push(move);
+
     rowFill.current[row]++;
     colFill.current[col]++;
     leftDiagFill.current[row + col]++;
-
     rightDiagFill.current[7 + (col - row)]++;
 
     setBoard((prev) => {
-      const tempBoard = [...prev];
+      const tempBoard = prev.map((r) => [...r]);
+
       if (!tempBoard[row][col]) {
         tempBoard[row][col] = 1;
+
         queenCount.current++;
-        if (queenCount.current === 8 && checkWin(tempBoard)) {
-          console.log("we won");
+
+        if (queenCount.current === 8 && checkWin()) {
           setGameStatus(true);
-        } else if (queenCount.current === 8) {
-          console.log("lose");
-        } else {
-          console.log("queen not filled");
         }
       }
+
       return tempBoard;
     });
   };
+
   return (
     <div className="min-h-screen bg-[#0f1117] text-white flex flex-col items-center justify-center p-6">
       <div className="mb-6 text-center">
@@ -186,6 +256,7 @@ const NQueen = () => {
             Undo
           </button>
         )}
+
         {!isSolutionGenerated && (
           <button
             type="button"
@@ -203,6 +274,7 @@ const NQueen = () => {
         >
           {isSolutionGenerated ? "Generate More" : "Generate"}
         </button>
+
         <button
           type="button"
           onClick={handleReset}
@@ -221,25 +293,26 @@ const NQueen = () => {
       <div className="p-4 rounded-3xl bg-[#161922] border border-[#2a2f42] shadow-2xl">
         <Board handleClick={handleClick} board={board} />
       </div>
+
       <button
         type="button"
         onClick={() => navigate("/tic-tac-toe")}
         className="
-    absolute
-    top-6
-    right-6
-    px-5
-    py-2
-    rounded-xl
-    bg-[#1c1f2b]
-    hover:bg-[#2a2f42]
-    border
-    border-[#32384d]
-    transition-all
-    duration-200
-    shadow-lg
-    hover:scale-105
-  "
+          absolute
+          top-6
+          right-6
+          px-5
+          py-2
+          rounded-xl
+          bg-[#1c1f2b]
+          hover:bg-[#2a2f42]
+          border
+          border-[#32384d]
+          transition-all
+          duration-200
+          shadow-lg
+          hover:scale-105
+        "
       >
         Tic Tac Toe →
       </button>
