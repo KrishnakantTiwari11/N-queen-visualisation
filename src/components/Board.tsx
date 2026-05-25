@@ -3,30 +3,26 @@ interface IBoardProps {
   handleClick: (row: number, col: number) => void;
 }
 
-interface IBoardProps {
-  board: number[][];
-  handleClick: (row: number, col: number) => void;
-}
-
 const Board = ({ board, handleClick }: IBoardProps) => {
   console.log("board render :", board);
 
   return (
-    <div className="flex justify-center w-full px-2">
+    <div className="flex justify-center items-center w-full px-1 sm:px-2">
       <div
         className="
-          grid
-          grid-cols-8
-          rounded-2xl
-          overflow-hidden
-          border
-          border-[#343a4d]
-          shadow-2xl
-          
-          max-w-[70vw]
-          max-h-[70vh]
-          aspect-square
-        "
+      grid
+      grid-cols-8
+      rounded-xl sm:rounded-2xl
+      overflow-hidden
+      border
+      border-[#343a4d]/60
+      shadow-2xl
+      w-[95vw]
+      max-w-[420px]
+      sm:max-w-[460px]
+      md:max-w-[500px]
+      aspect-square
+    "
       >
         {board.map((row, rowIndex) =>
           row.map((cell, colIndex) => {
@@ -46,8 +42,10 @@ const Board = ({ board, handleClick }: IBoardProps) => {
                   transition-all
                   duration-200
                   group
+                  border-[0.5px]
+                  border-black/10
                   ${isDark ? "bg-[#242836]" : "bg-[#181b24]"}
-                  hover:scale-105
+                  hover:scale-[1.03]
                   hover:z-10
                 `}
               >
@@ -69,7 +67,7 @@ const Board = ({ board, handleClick }: IBoardProps) => {
                   <span
                     className="
                       text-yellow-400
-                      text-[6vw]
+                      text-[8vw]
                       sm:text-5xl
                       select-none
                       drop-shadow-[0_0_12px_rgba(250,204,21,0.6)]
@@ -81,7 +79,7 @@ const Board = ({ board, handleClick }: IBoardProps) => {
                     ♛
                   </span>
                 ) : (
-                  <div className="min-w-[3.5vw] min-h-[3.5vh]"> </div>
+                  <div className="w-full h-full" />
                 )}
               </button>
             );
